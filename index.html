@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" x-data="countdownTimer()" x-init="startCountdown">
+<head>
+  <meta charset="UTF-8" />
+  <title>5 Minute Timer</title>
+  <!-- Alpine.js import -->
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #fff;
+      font-family: sans-serif;
+    }
+    /* Center everything */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-wrapper {
+      position: relative;
+      width: 440px;
+      height: 440px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* The countdown text */
+    .timer-text {
+      position: absolute;
+      text-align: center;
+      font-size: 4em;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    /* The SVG circle (background) */
+    .progress-background {
+      stroke: #eee;
+      stroke-width: 10;
+      fill: transparent;
+    }
+
+    /* The SVG circle (animated stroke) */
+    .progress-foreground {
+      stroke: #333;
+      stroke-width: 10;
+      fill: transparent;
+      /* 
+        Rotate + scale to make the circle shrink in a 
+        counter-clockwise direction starting from the top.
+      */
+      transform-origin: 220px 220px; /* must match cx, cy of circle */
+      transform: rotate(90deg) scale(1, -1);
+      transition: stroke-dashoffset 0.3s linear; /* a little transition */
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+        body {
+            background: #111;
+            color: #eee;
+        }
+        .progress-foreground {
+          stroke: #eee;
+        }
+        .progress-background {
+            stroke: #333;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="timer-wrapper">
+    <svg width="440" height="440">
+      <!-- Background circle (gray, always full) -->
+      <circle class="progress-background"
+              cx="220" cy="220" r="180"/>
+      <!-- Foreground circle (the shrinking stroke) -->
+      <circle class="progress-foreground"
+              cx="220" cy="220" r="180"
+              :stroke-dasharray="circumference"
+              :stroke-dashoffset="strokeOffset">
+      </circle>
+    </svg>
+    <!-- The text readout in the center -->
+    <div class="timer-text" x-text="formattedTime"></div>
+  </div>
+
+  <script>
+    function countdownTimer() {
+      return {
+        totalTime: 300,      // 5 minutes = 300 seconds
+        timeLeft: 300,       // start at full 5 minutes
+        intervalId: null,
+        circumference: 0,    // will be calculated from r=90
+
+        // Called automatically on Alpine init
+        startCountdown() {
+          // Circle circumference based on r=90
+          this.circumference = 2 * Math.PI * 180;
+
+          // Decrement every second
+          this.intervalId = setInterval(() => {
+            if (this.timeLeft > 0) {
+              this.timeLeft--;
+            } else {
+              clearInterval(this.intervalId);
+            }
+          }, 1000);
+        },
+
+        // Dynamically compute stroke-dashoffset
+        // Full circle at timeLeft=300 => offset=0
+        // Empty at timeLeft=0         => offset=circumference
+        get strokeOffset() {
+          return this.circumference * (1 - this.timeLeft / this.totalTime);
+        },
+
+        // Format MM:SS with leading zero
+        get formattedTime() {
+          const minutes = Math.floor(this.timeLeft / 60);
+          const seconds = this.timeLeft % 60;
+          return minutes + ':' + (seconds < 10 ? '0' + seconds : seconds);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
